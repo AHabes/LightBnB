@@ -71,7 +71,6 @@ const getAllReservations = function(guest_id, limit = 10) {
                      WHERE guest_id = $1
                      LIMIT $2`, [guest_id, limit])
     .then(reservations => {
-      console.log('getAllReservations ==> ', reservations.rows);
       return reservations.rows;
     })
     .catch(err => console.log(err));
@@ -154,9 +153,14 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+  let query = `INSERT INTO properties (${Object.keys(property)})
+               VALUES (`;
+
+  const values = Object.values(property);
+  const valuesPlaceHolder = [...Array(values.length).keys()].map(i => `$${i + 1}`).join(',');
+  query += valuesPlaceHolder + ') RETURNING *;';
+  return pool.query(query, values);
 };
 exports.addProperty = addProperty;
+
+
